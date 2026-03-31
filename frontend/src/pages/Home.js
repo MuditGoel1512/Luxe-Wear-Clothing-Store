@@ -50,7 +50,7 @@ const Home = () => {
 
   const categoryImages = {
     men: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600',
-    women: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=600',
+    women: 'https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     kids: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600',
     accessories: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600',
     footwear: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600',
