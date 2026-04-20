@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   const login = async (email, password) => {
     const res = await authAPI.login({ email, password });

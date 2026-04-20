@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, X, ShoppingBag, ArrowRight } from 'lucide-react';
@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 const Cart = () => {
-  const { items, total, updateItem, removeItem, loading } = useCart();
+  const { items, total, updateItem, removeItem } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
