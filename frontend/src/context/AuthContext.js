@@ -7,6 +7,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  
+  const logout = useCallback(() => {
+    localStorage.removeItem('luxe_token');
+    localStorage.removeItem('luxe_user');
+    setUser(null);
+  }, []);
+
+
   useEffect(() => {
     const token = localStorage.getItem('luxe_token');
     const savedUser = localStorage.getItem('luxe_user');
@@ -38,13 +46,6 @@ export const AuthProvider = ({ children }) => {
     setUser(user);
     return user;
   };
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('luxe_token');
-    localStorage.removeItem('luxe_user');
-    setUser(null);
-  }, []);
-
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin: user?.role === 'admin' }}>
       {children}
