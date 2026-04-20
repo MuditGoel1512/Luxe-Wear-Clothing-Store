@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../utils/api';
-import toast from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 

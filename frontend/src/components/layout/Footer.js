@@ -20,7 +20,7 @@ const Footer = () => (
           </p>
           <div className="flex gap-4">
             {[Instagram, Twitter, Facebook, Youtube].map((Icon, i) => (
-              <a key={i} href="#" className="w-9 h-9 border border-white/10 flex items-center justify-center text-gray-400 hover:text-gold-400 hover:border-gold-400 transition-all">
+              <a key={i} href="/" className="w-9 h-9 border border-white/10 flex items-center justify-center text-gray-400 hover:text-gold-400 hover:border-gold-400 transition-all">
                 <Icon size={16} />
               </a>
             ))}
@@ -45,7 +45,7 @@ const Footer = () => (
           <ul className="space-y-3">
             {['FAQ', 'Shipping & Returns', 'Size Guide', 'Track Order', 'Contact Us', 'Privacy Policy'].map(item => (
               <li key={item}>
-                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{item}</a>
+                <a href="/" className="text-gray-400 hover:text-white text-sm transition-colors">{item}</a>
               </li>
             ))}
           </ul>
