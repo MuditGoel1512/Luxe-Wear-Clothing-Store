@@ -46,16 +46,21 @@ const Checkout = () => {
         theme: { color: '#d4a017' },
         handler: async (response) => {
           try {
-            await orderAPI.verifyPayment({
+            const verifyRes = await orderAPI.verifyPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               cart_items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity, price: i.price, size: i.size, color: i.color })),
               shipping_address: address,
             });
+            console.log('✓ Payment verified:', verifyRes.data);
             await clearCart();
+            toast.success('Order placed successfully!');
             setStep(3);
-          } catch (e) { toast.error('Payment verification failed'); }
+          } catch (e) {
+            console.error('✗ Payment verification failed:', e.response?.data || e.message);
+            toast.error(e.response?.data?.message || 'Payment verification failed');
+          }
         },
         modal: { ondismiss: () => setProcessing(false) },
       };

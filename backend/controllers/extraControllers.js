@@ -56,15 +56,18 @@ const createRazorpayOrder = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, cart_items, shipping_address } = req.body;
+  console.log('🔐 Payment verification started for user:', req.user.id);
   try {
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSign = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET).update(sign).digest('hex');
 
     if (expectedSign !== razorpay_signature) {
+      console.error('✗ Invalid signature');
       return res.status(400).json({ success: false, message: 'Invalid payment signature' });
     }
 
     const total = cart_items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    console.log('✓ Signature verified. Creating order with total:', total);
 
     const [orderResult] = await pool.execute(
       'INSERT INTO orders (user_id, total_price, status, payment_id, razorpay_order_id, payment_status, shipping_address) VALUES (?,?,?,?,?,?,?)',
@@ -72,41 +75,75 @@ const verifyPayment = async (req, res) => {
     );
 
     const orderId = orderResult.insertId;
+    console.log('✓ Order created with ID:', orderId);
+
     for (const item of cart_items) {
       await pool.execute(
         'INSERT INTO order_items (order_id, product_id, quantity, price, size, color) VALUES (?,?,?,?,?,?)',
         [orderId, item.product_id, item.quantity, item.price, item.size || null, item.color || null]
       );
     }
+    console.log('✓ Order items added');
 
     // Clear cart
     const [cart] = await pool.execute('SELECT id FROM cart WHERE user_id = ?', [req.user.id]);
     if (cart.length) await pool.execute('DELETE FROM cart_items WHERE cart_id = ?', [cart[0].id]);
+    console.log('✓ Cart cleared');
 
     res.json({ success: true, message: 'Payment verified & order placed', order_id: orderId });
   } catch (error) {
+    console.error('✗ Payment verification error:', error.message);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 
 const getOrders = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      console.error('✗ Missing user info:', req.user);
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
+    console.log('📦 Fetching orders for user:', req.user.id);
     const [orders] = await pool.execute(
       'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.id]
     );
+    console.log(`✓ Found ${orders.length} orders`);
 
     const ordersWithItems = await Promise.all(orders.map(async (order) => {
-      const [items] = await pool.execute(
-        `SELECT oi.*, p.name, p.image FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?`,
-        [order.id]
-      );
-      return { ...order, shipping_address: order.shipping_address ? JSON.parse(order.shipping_address) : null, items };
+      try {
+        const [items] = await pool.execute(
+          `SELECT oi.*, p.name, p.image FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?`,
+          [order.id]
+        );
+        
+        let parsedAddress = null;
+        if (order.shipping_address) {
+          try {
+            parsedAddress = JSON.parse(order.shipping_address);
+          } catch (e) {
+            console.warn(`⚠ Failed to parse shipping_address for order ${order.id}`);
+            parsedAddress = order.shipping_address;
+          }
+        }
+        
+        return { ...order, shipping_address: parsedAddress, items };
+      } catch (itemError) {
+        console.error(`✗ Error fetching items for order ${order.id}:`, itemError.message);
+        throw itemError;
+      }
     }));
 
+    console.log('✓ Returning orders with items');
     res.json({ success: true, orders: ordersWithItems });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('✗ Error fetching orders:', error.message, error.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch orders',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

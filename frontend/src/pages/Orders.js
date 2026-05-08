@@ -17,15 +17,35 @@ const statusConfig = {
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     orderAPI.getMyOrders()
-      .then(res => setOrders(res.data.orders))
-      .catch(console.error)
+      .then(res => {
+        console.log('✓ Orders fetched:', res.data.orders);
+        setOrders(res.data.orders);
+      })
+      .catch(err => {
+        console.error('✗ Failed to fetch orders:', err.response?.data || err.message);
+        setError(err.response?.data?.message || 'Failed to load orders');
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <PageLoader />;
+
+  if (error) {
+    return (
+      <div className="min-h-screen pt-24 pb-24 px-6 max-w-5xl mx-auto">
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-white mb-12">My Orders</h1>
+        <div className="text-center py-32 flex flex-col items-center gap-6 glass p-8">
+          <h2 className="font-display text-3xl text-red-400">Error Loading Orders</h2>
+          <p className="text-gray-400 text-sm">{error}</p>
+          <button onClick={() => window.location.reload()} className="btn-gold text-sm">Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-5xl mx-auto">
