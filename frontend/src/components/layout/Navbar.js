@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Heart, User, Menu, X, Search, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import debounce from 'lodash.debounce';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -11,10 +12,12 @@ const Navbar = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
   const { user, logout, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  const debouncedSearchRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -24,12 +27,38 @@ const Navbar = () => {
 
   useEffect(() => { setMenuOpen(false); setUserMenuOpen(false); }, [location]);
 
+  // Create debounced search function
+  useEffect(() => {
+    debouncedSearchRef.current = debounce((query) => {
+      if (query.trim()) {
+        setSearching(true);
+        navigate(`/products?search=${encodeURIComponent(query.trim())}`);
+        setSearchQuery('');
+        setSearchOpen(false);
+        setSearching(false);
+      }
+    }, 500); // 500ms delay
+
+    return () => {
+      if (debouncedSearchRef.current) {
+        debouncedSearchRef.current.cancel();
+      }
+    };
+  }, [navigate]);
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setSearching(true);
+    if (debouncedSearchRef.current) {
+      debouncedSearchRef.current(value);
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchOpen(false);
-      setSearchQuery('');
+    if (debouncedSearchRef.current) {
+      debouncedSearchRef.current.flush(); // Execute immediately if still pending
     }
   };
 
@@ -164,15 +193,21 @@ const Navbar = () => {
             >
               <form onSubmit={handleSearch} className="max-w-2xl mx-auto px-6 py-4">
                 <div className="relative">
-                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={18} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searching ? 'text-gold-400 animate-pulse' : 'text-gray-400'}`} />
                   <input
                     autoFocus
                     value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+                    onChange={handleSearchInput}
                     placeholder="Search for products..."
-                    className="input-luxury pl-10"
+                    className="input-luxury pl-10 pr-10"
                   />
+                  {searching && searchQuery && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-gold-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                 </div>
+                <p className="text-xs text-gray-500 mt-2">Results will appear automatically as you type</p>
               </form>
             </motion.div>
           )}
